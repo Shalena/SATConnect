@@ -91,7 +91,7 @@ extension BluetoothManager: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         if let data = characteristic.value {
-            print("Данные с Garmin: \(data)")
+            print("Данные с \(peripheral.name ?? "устройства"): \(data)")
         }
         if let err = error {
             print("Ошибка: \(err.localizedDescription)")

@@ -27,9 +27,9 @@ struct HomeView: View {
                         .foregroundColor(.gray)
                 }.onTapGesture {
                     if let name = device.name,
-                       name.localizedCaseInsensitiveContains("activ") {
+                       name.localizedCaseInsensitiveContains("SAT") {
                         bluetoothManager.selectedPeripheral = device.peripheral
-                        coordinator.showSecondView()
+                        coordinator.showSecondView(device: device)
                     }
                 }
             }

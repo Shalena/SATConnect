@@ -7,15 +7,16 @@
 import SwiftUI
 import CoreBluetooth
 
-struct GarminDetailsScreen: View {
+struct DeviceDetailsScreen: View {
     @ObservedObject var coordinator: Coordinator
+    let device: DiscoveredDevice
 
     var body: some View {
         VStack {
             Image(systemName: "antenna.radiowaves.left.and.right")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
-            Text("Получить информацию с Garmin")
+            Text("Получить информацию с \(device.name ?? "устройства"))")
                 .font(.title)
                 .padding()
         }.onTapGesture {

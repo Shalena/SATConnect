@@ -7,18 +7,20 @@
 
 import SwiftUI
 
+enum Route: Hashable {
+    case deviceDetails(DiscoveredDevice)
+}
+
 struct RootView: View {
     @StateObject var coordinator = Coordinator()
 
     var body: some View {
         NavigationStack(path: $coordinator.path) {
             HomeView(coordinator: coordinator, bluetoothManager: coordinator.bluetoothManager)
-                .navigationDestination(for: String.self) { route in
+                .navigationDestination(for: Route.self) { route in
                     switch route {
-                    case "GarminDetailsScreen":
-                        GarminDetailsScreen(coordinator: coordinator)
-                    default:
-                        EmptyView()
+                    case .deviceDetails(let device):
+                        DeviceDetailsScreen(coordinator: coordinator, device: device)
                     }
                 }
         }

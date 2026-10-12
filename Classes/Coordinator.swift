@@ -8,8 +8,8 @@ class Coordinator: ObservableObject {
         bluetoothManager.selectedPeripheral = nil
     }
 
-    func showSecondView() {
-        path.append("GarminDetailsScreen")
+    func showSecondView(device: DiscoveredDevice) {
+        path.append(Route.deviceDetails(device))
     }
 
     func goBack() {
