@@ -20,12 +20,9 @@ struct RootView: View {
                 .navigationDestination(for: Route.self) { route in
                     switch route {
                     case .deviceDetails(let device):
-                        DeviceDetailsScreen(coordinator: coordinator, device: device)
+                        DeviceDetailsScreen(bluetoothManager: coordinator.bluetoothManager, device: device)
                     }
                 }
-        }
-        .onAppear {
-            coordinator.start()
         }
     }
 }

@@ -28,12 +28,10 @@ struct HomeView: View {
                 }.onTapGesture {
                     if let name = device.name,
                        name.localizedCaseInsensitiveContains("SAT") {
-                        bluetoothManager.selectedPeripheral = device.peripheral
                         coordinator.showSecondView(device: device)
                     }
                 }
             }
-           
         }
         .padding()
         .onTapGesture {

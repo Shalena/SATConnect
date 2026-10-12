@@ -8,25 +8,35 @@ import SwiftUI
 import CoreBluetooth
 
 struct DeviceDetailsScreen: View {
-    @ObservedObject var coordinator: Coordinator
+    @ObservedObject var bluetoothManager: BluetoothManager
     let device: DiscoveredDevice
 
     var body: some View {
-        VStack {
-            Image(systemName: "antenna.radiowaves.left.and.right")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Получить информацию с \(device.name ?? "устройства"))")
-                .font(.title)
-                .padding()
-        }.onTapGesture {
-            if coordinator.bluetoothManager.centralManager.state == .poweredOn {
-                coordinator.bluetoothManager.connectSelectedPeriferal()
+        let isConnected = bluetoothManager.connectedPeripheralIDs.contains(device.id)
+        Button {
+            if isConnected {
+                bluetoothManager.disconnect(device.peripheral)
             } else {
-                print("Bluetooth выключен или не готов")
+                bluetoothManager.connect(device.peripheral)
             }
+        } label: {
+            Text("\(isConnected ? "Disconnect" : "Connect") \(device.name ?? "device")")
         }
+        .buttonStyle(TapAnimationStyle())
+    }
+
+}
+
+private struct TapAnimationStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .opacity(configuration.isPressed ? 0.75 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.6),
+                       value: configuration.isPressed)
     }
 }
+
+
 
 

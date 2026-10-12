@@ -5,17 +5,22 @@ class BluetoothManager: NSObject, ObservableObject {
     var centralManager: CBCentralManager!
     @Published var statusMessage = "Ожидание включения Bluetooth..."
     @Published var discoveredDevices: [DiscoveredDevice] = []
-    @Published var selectedPeripheral: CBPeripheral?
+    @Published private(set) var connectedPeripheralIDs = Set<UUID>()
 
     override init() {
         super.init()
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
 
-    func connectSelectedPeriferal() {
-        if let selected = selectedPeripheral {
-            centralManager.connect(selected, options: nil)
-        }
+    func connect(_ peripheral: CBPeripheral) {
+        guard centralManager.state == .poweredOn,
+              peripheral.state == .disconnected else { return }
+        centralManager.connect(peripheral, options: nil)
+    }
+
+    func disconnect(_ peripheral: CBPeripheral) {
+        guard peripheral.state == .connected else { return }
+        centralManager.cancelPeripheralConnection(peripheral)
     }
 
     func startScan() {
@@ -65,8 +70,17 @@ extension BluetoothManager: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         peripheral.delegate = self
         peripheral.discoverServices(nil)  // Запрос всех сервисов
+        connectedPeripheralIDs.insert(peripheral.identifier)
     }
 
+    func centralManager(
+        _ central: CBCentralManager,
+        didDisconnectPeripheral peripheral: CBPeripheral,
+        error: Error?
+    ) {
+        connectedPeripheralIDs.remove(peripheral.identifier)
+    }
+    
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         print("Не удалось подключиться к устройству \(peripheral.name ?? ""): \(error?.localizedDescription ?? "нет ошибки")")
     }
@@ -90,9 +104,12 @@ extension BluetoothManager: CBPeripheralDelegate {
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let data = characteristic.value {
-            print("Данные с \(peripheral.name ?? "устройства"): \(data)")
-        }
+        guard let data = characteristic.value else { return }
+            if let text = String(data: data, encoding: .utf8) {
+                print("Данные с \(peripheral.name ?? "устройства"): \(text)")
+            } else {
+                print("Получены данные, но они не являются корректным UTF-8: \(data)")
+            }
         if let err = error {
             print("Ошибка: \(err.localizedDescription)")
         }
