@@ -1,6 +1,8 @@
 import SwiftUI
 import CoreBluetooth
 
+let writeCharacteristicUUID = "7F4A1002-8C9D-4B55-A1B2-123456789ABC" // write, write without response
+
 class BluetoothManager: NSObject, ObservableObject {
     var centralManager: CBCentralManager!
     @Published var statusMessage = "Ожидание включения Bluetooth..."
@@ -33,6 +35,31 @@ class BluetoothManager: NSObject, ObservableObject {
             print("State description: \(centralManager.state)")
             print("Bluetooth не готов к сканированию")
         }
+    }
+
+    func sendPing(to peripheral: CBPeripheral) {
+        let uuid = CBUUID(string: writeCharacteristicUUID)
+
+        guard let characteristic = peripheral.services?
+            .lazy
+            .compactMap({ service in
+                service.characteristics?.first(where: { $0.uuid == uuid })
+            })
+            .first else {
+            print("Characteristic \(uuid) not found")
+            return
+        }
+
+        guard characteristic.properties.contains(.write) else {
+            print("Characteristic \(uuid) does not support writes with response")
+            return
+        }
+
+        peripheral.writeValue(
+            Data("PING".utf8),
+            for: characteristic,
+            type: .withResponse
+        )
     }
 }
 
@@ -101,6 +128,19 @@ extension BluetoothManager: CBPeripheralDelegate {
             peripheral.readValue(for: characteristic)
             peripheral.setNotifyValue(true, for: characteristic)
         }
+
+        for characteristic in service.characteristics ?? [] {
+               var properties: [String] = []
+               let p = characteristic.properties
+
+               if p.contains(.read) { properties.append("read") }
+               if p.contains(.write) { properties.append("write") }
+               if p.contains(.writeWithoutResponse) { properties.append("writeWithoutResponse") }
+               if p.contains(.notify) { properties.append("notify") }
+               if p.contains(.indicate) { properties.append("indicate") }
+
+               print("Characteristic UUID: \(characteristic.uuid), properties: \(properties)")
+           }
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {

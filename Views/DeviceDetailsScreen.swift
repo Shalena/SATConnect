@@ -12,17 +12,26 @@ struct DeviceDetailsScreen: View {
     let device: DiscoveredDevice
 
     var body: some View {
-        let isConnected = bluetoothManager.connectedPeripheralIDs.contains(device.id)
-        Button {
-            if isConnected {
-                bluetoothManager.disconnect(device.peripheral)
-            } else {
-                bluetoothManager.connect(device.peripheral)
+        VStack (spacing: 20) {
+            let isConnected = bluetoothManager.connectedPeripheralIDs.contains(device.id)
+            Button {
+                if isConnected {
+                    bluetoothManager.disconnect(device.peripheral)
+                } else {
+                    bluetoothManager.connect(device.peripheral)
+                }
+            } label: {
+                Text("\(isConnected ? "Disconnect" : "Connect") \(device.name ?? "device")")
             }
-        } label: {
-            Text("\(isConnected ? "Disconnect" : "Connect") \(device.name ?? "device")")
+            .buttonStyle(TapAnimationStyle())
+
+            Button {
+                bluetoothManager.sendPing(to: device.peripheral)
+            } label: {
+                Text("Send ping")
+            }
+            .buttonStyle(TapAnimationStyle())
         }
-        .buttonStyle(TapAnimationStyle())
     }
 
 }
