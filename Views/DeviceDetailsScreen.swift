@@ -24,13 +24,10 @@ struct DeviceDetailsScreen: View {
                 Text("\(isConnected ? "Disconnect" : "Connect") \(device.name ?? "device")")
             }
             .buttonStyle(TapAnimationStyle())
-
-            Button {
-                bluetoothManager.sendPing(to: device.peripheral)
-            } label: {
-                Text("Send ping")
+            if isConnected {
+                ServicesView(bluetoothManager: bluetoothManager, peripheral: device.peripheral)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .buttonStyle(TapAnimationStyle())
         }
     }
 

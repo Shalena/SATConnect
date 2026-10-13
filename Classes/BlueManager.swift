@@ -8,6 +8,9 @@ class BluetoothManager: NSObject, ObservableObject {
     @Published var statusMessage = "Ожидание включения Bluetooth..."
     @Published var discoveredDevices: [DiscoveredDevice] = []
     @Published private(set) var connectedPeripheralIDs = Set<UUID>()
+    @Published private(set) var servicesByPeripheralID: [UUID: [CBService]] = [:]
+    @Published private(set) var characteristicsByPeripheralID:
+        [UUID: [String: [CBCharacteristic]]] = [:]
 
     override init() {
         super.init()
@@ -116,32 +119,37 @@ extension BluetoothManager: CBCentralManagerDelegate {
 // MARK: - CBPeripheralDelegate
 extension BluetoothManager: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        guard let services = peripheral.services else { return }
+        if let error {
+            print("Service discovery failed: \(error.localizedDescription)")
+            return
+        }
+        let services = peripheral.services ?? []
+        servicesByPeripheralID[peripheral.identifier] = services
+        characteristicsByPeripheralID[peripheral.identifier] = [:]
         for service in services {
             peripheral.discoverCharacteristics(nil, for: service)
         }
     }
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        guard let characteristics = service.characteristics else { return }
-        for characteristic in characteristics {
-            peripheral.readValue(for: characteristic)
-            peripheral.setNotifyValue(true, for: characteristic)
-        }
+        servicesByPeripheralID[peripheral.identifier] = peripheral.services ?? []
 
         for characteristic in service.characteristics ?? [] {
-               var properties: [String] = []
-               let p = characteristic.properties
+            if characteristic.properties.contains(.read) {
+                peripheral.readValue(for: characteristic)
+            }
 
-               if p.contains(.read) { properties.append("read") }
-               if p.contains(.write) { properties.append("write") }
-               if p.contains(.writeWithoutResponse) { properties.append("writeWithoutResponse") }
-               if p.contains(.notify) { properties.append("notify") }
-               if p.contains(.indicate) { properties.append("indicate") }
-
-               print("Characteristic UUID: \(characteristic.uuid), properties: \(properties)")
-           }
+            if characteristic.properties.contains(.notify)
+                || characteristic.properties.contains(.indicate) {
+                peripheral.setNotifyValue(true, for: characteristic)
+            }
+        }
+        var discovered = characteristicsByPeripheralID[peripheral.identifier] ?? [:]
+          discovered[service.uuid.uuidString] = service.characteristics ?? []
+          characteristicsByPeripheralID[peripheral.identifier] = discovered
     }
+
+    
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         guard let data = characteristic.value else { return }
